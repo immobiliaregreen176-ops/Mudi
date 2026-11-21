@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mudi – Crea la tua pagina</title>
+<style>
+  :root {
+    --bg: #f4f5f7; --panel: #ffffff; --line: #e3e5e8; --ink: #1d2127; --muted: #6b7280;
+    --accent: #2f6fed; --accent-ink: #ffffff; --danger: #d64545;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); background: var(--bg); display: grid; grid-template-rows: auto 1fr; }
+
+  header.app { display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  header.app h1 { font-size: 16px; margin: 0 auto 0 0; letter-spacing: .2px; }
+  header.app h1 span { color: var(--muted); font-weight: 400; }
+  button, .btn { font: inherit; border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 7px 12px; border-radius: 6px; cursor: pointer; }
+  button:hover { border-color: #c6cad1; }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  button.danger { color: var(--danger); }
+
+  main.app { display: grid; grid-template-columns: 260px 1fr; min-height: 0; }
+  aside { background: var(--panel); border-right: 1px solid var(--line); padding: 16px; overflow: auto; }
+  aside h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin: 18px 0 8px; }
+  aside h2:first-child { margin-top: 0; }
+  .blocks { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .blocks button { text-align: left; padding: 9px 10px; }
+  label.field { display: block; margin-bottom: 10px; }
+  label.field span { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  label.field input, label.field select { width: 100%; font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+  label.field input[type=color] { height: 34px; padding: 2px; }
+  .hint { color: var(--muted); font-size: 12px; margin-top: 16px; }
+
+  .stage { overflow: auto; padding: 24px; }
+  .device { margin: 0 auto; max-width: 1100px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 8px 30px rgba(0,0,0,.06); border-radius: 8px; overflow: hidden; transition: max-width .2s; }
+  .device.mobile { max-width: 390px; }
+  .empty { padding: 80px 24px; text-align: center; color: var(--muted); }
+
+  /* Editor wrappers around each block */
+  .eb { position: relative; outline: 2px solid transparent; outline-offset: -2px; }
+  .eb:hover { outline-color: rgba(47,111,237,.45); }
+  .eb.sel { outline-color: var(--accent); }
+  .eb .tools { position: absolute; top: 8px; right: 8px; display: none; gap: 4px; z-index: 5; }
+  .eb:hover .tools, .eb.sel .tools { display: flex; }
+  .eb .tools button { padding: 4px 8px; font-size: 12px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+  .eb .tag { position: absolute; top: 8px; left: 8px; font-size: 11px; background: var(--accent); color: #fff; padding: 2px 7px; border-radius: 4px; display: none; z-index: 5; }
+  .eb:hover .tag, .eb.sel .tag { display: block; }
+  [contenteditable]:focus { outline: 1px dashed rgba(47,111,237,.7); outline-offset: 3px; }
+  .preview-mode .eb { outline: none !important; }
+  .preview-mode .eb .tools, .preview-mode .eb .tag { display: none !important; }
+  .editable-img { cursor: pointer; }
+
+  dialog { border: 1px solid var(--line); border-radius: 10px; padding: 20px; width: min(440px, calc(100vw - 32px)); }
+  dialog::backdrop { background: rgba(0,0,0,.35); }
+  dialog h3 { margin: 0 0 12px; font-size: 16px; }
+  dialog .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+
+  @media (max-width: 760px) {
+    main.app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    aside { border-right: 0; border-bottom: 1px solid var(--line); max-height: 42vh; }
+    .stage { padding: 12px; }
+  }
+</style>
+<!-- Stili della pagina generata (usati anche nell'esportazione) -->
+<style id="site-css"></style>
+</head>
+<body>
+<header class="app">
+  <h1>Mudi <span>· Crea la tua pagina</span></h1>
+  <button id="btnView" title="Cambia larghezza anteprima">📱 Mobile</button>
+  <button id="btnPreview">👁 Anteprima</button>
+  <button id="btnNew" class="danger">Nuova pagina</button>
+  <button id="btnImport">Apri progetto</button>
+  <button id="btnSave">Salva progetto</button>
+  <button id="btnExport" class="primary">⬇ Esporta HTML</button>
+  <input type="file" id="importFile" accept=".json,application/json" hidden>
+</header>
+
+<main class="app">
+  <aside>
+    <h2>Aggiungi sezione</h2>
+    <div class="blocks" id="palette"></div>
+
+    <h2>Impostazioni pagina</h2>
+    <label class="field"><span>Titolo della pagina (scheda del browser)</span><input id="setTitle"></label>
+    <label class="field"><span>Colore principale</span><input type="color" id="setColor"></label>
+    <label class="field"><span>Carattere</span>
+      <select id="setFont">
+        <option value='system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'>Moderno (sistema)</option>
+        <option value='Georgia, "Times New Roman", serif'>Elegante (serif)</option>
+        <option value='"Trebuchet MS", "Helvetica Neue", Arial, sans-serif'>Amichevole</option>
+        <option value='"Courier New", ui-monospace, monospace'>Macchina da scrivere</option>
+      </select>
+    </label>
+    <label class="field"><span>Sfondo</span>
+      <select id="setTheme">
+        <option value="light">Chiaro</option>
+        <option value="dark">Scuro</option>
+      </select>
+    </label>
+
+    <p class="hint">Clicca su qualsiasi testo per modificarlo. Clicca su un'immagine per cambiarla. Usa ↑ ↓ per spostare le sezioni. Il lavoro viene salvato automaticamente in questo browser.</p>
+  </aside>
+
+  <section class="stage">
+    <div class="device" id="device"><div id="canvas"></div></div>
+  </section>
+</main>
+
+<dialog id="imgDialog">
+  <h3>Cambia immagine</h3>
+  <label class="field"><span>Indirizzo web dell'immagine (URL)</span><input id="imgUrl" placeholder="https://…"></label>
+  <label class="field"><span>…oppure carica dal tuo computer</span><input type="file" id="imgFile" accept="image/*"></label>
+  <label class="field"><span>Testo alternativo (descrizione)</span><input id="imgAlt"></label>
+  <div class="row">
+    <button id="imgCancel">Annulla</button>
+    <button id="imgOk" class="primary">Applica</button>
+  </div>
+</dialog>
+
+<dialog id="linkDialog">
+  <h3>Collegamento del pulsante</h3>
+  <label class="field"><span>Indirizzo (URL, mailto:, tel:)</span><input id="linkUrl" placeholder="https://…"></label>
+  <div class="row">
+    <button id="linkCancel">Annulla</button>
+    <button id="linkOk" class="primary">Applica</button>
+  </div>
+</dialog>
+
+<script>
+(() => {
+  const STORAGE_KEY = 'mudi-page-v1';
+  const ph = (w, h, label) => 'data:image/svg+xml;utf8,' + encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="#dfe3e8"/><text x="50%" y="50%" fill="#8a929c" font-family="sans-serif" font-size="${Math.round(h/9)}" text-anchor="middle" dominant-baseline="middle">${label}</text></svg>`);
+
+  /* ---------- Tipi di sezione ---------- */
+  const TYPES = {
+    nav: { name: 'Menu', make: () => ({ brand: 'Il mio sito', l1: 'Chi siamo', l2: 'Servizi', l3: 'Contatti' }) },
+    hero: { name: 'Copertina', make: () => ({ title: 'Benvenuti', text: 'Una breve frase che spiega cosa fate e perché sceglierci.', btn: 'Scopri di più', href: '#contatti', img: ph(1600, 700, ''), alt: '' }) },
+    text: { name: 'Testo', make: () => ({ title: 'Chi siamo', text: 'Raccontate la vostra storia. Chi siete, cosa offrite e cosa vi rende diversi. Cliccate qui per scrivere il vostro testo.' }) },
+    imgtext: { name: 'Immagine + testo', make: () => ({ title: 'La nostra esperienza', text: 'Descrivete un punto di forza, un prodotto o un servizio, accompagnato da una foto.', img: ph(800, 600, 'Foto'), alt: '' }) },
+    features: { name: 'Tre colonne', make: () => ({ title: 'I nostri servizi', t1: 'Servizio uno', d1: 'Breve descrizione del primo servizio.', t2: 'Servizio due', d2: 'Breve descrizione del secondo servizio.', t3: 'Servizio tre', d3: 'Breve descrizione del terzo servizio.' }) },
+    gallery: { name: 'Galleria', make: () => ({ title: 'Galleria', i1: ph(600, 450, 'Foto 1'), i2: ph(600, 450, 'Foto 2'), i3: ph(600, 450, 'Foto 3'), a1: '', a2: '', a3: '' }) },
+    quote: { name: 'Citazione', make: () => ({ text: '“Servizio eccellente, li consiglio a tutti!”', who: '— Maria R., cliente' }) },
+    cta: { name: 'Pulsante', make: () => ({ title: 'Pronti a iniziare?', btn: 'Contattaci ora', href: 'mailto:info@esempio.it' }) },
+    contact: { name: 'Contatti', make: () => ({ title: 'Contatti', addr: 'Via Roma 1, 00100 Roma', phone: '+39 06 1234567', email: 'info@esempio.it', hours: 'Lun–Ven 9:00–18:00' }) },
+    footer: { name: 'Piè di pagina', make: () => ({ text: '© ' + new Date().getFullYear() + ' Il mio sito · Tutti i diritti riservati' }) },
+  };
+
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  // Testo modificabile: in editor è contenteditable, in export è semplice HTML.
+  const T = (edit, b, key, tag = 'span', cls = '') => {
+    const attrs = edit ? ` contenteditable="true" spellcheck="true" data-key="${key}" data-id="${b.id}"` : '';
+    return `<${tag}${cls ? ` class="${cls}"` : ''}${attrs}>${esc(b.p[key]).replace(/\n/g, '<br>')}</${tag}>`;
+  };
+  const I = (edit, b, key, altKey, cls = '') => {
+    const attrs = edit ? ` data-img="${key}" data-alt="${altKey}" data-id="${b.id}" title="Clicca per cambiare immagine"` : '';
+    return `<img class="${cls}${edit ? ' editable-img' : ''}" src="${esc(b.p[key])}" alt="${esc(b.p[altKey])}"${attrs}>`;
+  };
+  const L = (edit, b, key, hrefKey) => {
+    const attrs = edit ? ` contenteditable="true" data-key="${key}" data-id="${b.id}" data-link="${hrefKey}" title="Doppio clic per cambiare il collegamento"` : '';
+    return `<a class="m-btn" href="${esc(b.p[hrefKey])}"${attrs}>${esc(b.p[key])}</a>`;
+  };
+
+  const RENDER = {
+    nav: (b, e) => `<nav class="m-nav"><div class="m-wrap m-row">${T(e, b, 'brand', 'strong', 'm-brand')}<div class="m-links">${T(e, b, 'l1')}${T(e, b, 'l2')}${T(e, b, 'l3')}</div></div></nav>`,
+    hero: (b, e) => `<section class="m-hero">${I(e, b, 'img', 'alt', 'm-hero-img')}<div class="m-hero-in m-wrap">${T(e, b, 'title', 'h1')}${T(e, b, 'text', 'p')}${L(e, b, 'btn', 'href')}</div></section>`,
+    text: (b, e) => `<section class="m-sec"><div class="m-wrap m-narrow">${T(e, b, 'title', 'h2')}${T(e, b, 'text', 'p')}</div></section>`,
+    imgtext: (b, e) => `<section class="m-sec"><div class="m-wrap m-split">${I(e, b, 'img', 'alt', 'm-rounded')}<div>${T(e, b, 'title', 'h2')}${T(e, b, 'text', 'p')}</div></div></section>`,
+    features: (b, e) => `<section class="m-sec m-alt"><div class="m-wrap">${T(e, b, 'title', 'h2', 'm-center')}<div class="m-grid3">${[1, 2, 3].map(n => `<div class="m-card">${T(e, b, 't' + n, 'h3')}${T(e, b, 'd' + n, 'p')}</div>`).join('')}</div></div></section>`,
+    gallery: (b, e) => `<section class="m-sec"><div class="m-wrap">${T(e, b, 'title', 'h2', 'm-center')}<div class="m-grid3">${[1, 2, 3].map(n => I(e, b, 'i' + n, 'a' + n, 'm-rounded')).join('')}</div></div></section>`,
+    quote: (b, e) => `<section class="m-sec m-alt"><div class="m-wrap m-narrow m-center"><blockquote>${T(e, b, 'text', 'p', 'm-quote')}${T(e, b, 'who', 'cite')}</blockquote></div></section>`,
+    cta: (b, e) => `<section class="m-sec m-cta"><div class="m-wrap m-center">${T(e, b, 'title', 'h2')}${L(e, b, 'btn', 'href')}</div></section>`,
+    contact: (b, e) => `<section class="m-sec" id="contatti"><div class="m-wrap m-narrow">${T(e, b, 'title', 'h2')}<ul class="m-contact"><li><b>Indirizzo</b>${T(e, b, 'addr')}</li><li><b>Telefono</b>${T(e, b, 'phone')}</li><li><b>Email</b>${T(e, b, 'email')}</li><li><b>Orari</b>${T(e, b, 'hours')}</li></ul></div></section>`,
+    footer: (b, e) => `<footer class="m-foot"><div class="m-wrap m-center">${T(e, b, 'text', 'small')}</div></footer>`,
+  };
+
+  const siteCSS = s => {
+    const dark = s.theme === 'dark';
+    const bg = dark ? '#121417' : '#ffffff', ink = dark ? '#e8eaed' : '#1d2127', alt = dark ? '#1b1e23' : '#f5f6f8', muted = dark ? '#a3a9b2' : '#5b6470', card = dark ? '#22262c' : '#ffffff';
+    return `
+.m-site{--c:${s.color};background:${bg};color:${ink};font-family:${s.font};line-height:1.6}
+.m-site *{box-sizing:border-box}
+.m-site h1,.m-site h2,.m-site h3{line-height:1.2;margin:0 0 .5em}
+.m-site h1{font-size:clamp(2rem,5vw,3.2rem)}.m-site h2{font-size:clamp(1.5rem,3.5vw,2.1rem)}.m-site h3{font-size:1.15rem}
+.m-site p{margin:0 0 1em;color:${muted}}
+.m-wrap{max-width:1080px;margin:0 auto;padding:0 20px}.m-narrow{max-width:760px}
+.m-center{text-align:center}
+.m-sec{padding:64px 0}.m-alt{background:${alt}}
+.m-nav{padding:16px 0;border-bottom:1px solid ${dark ? '#2a2e35' : '#eceef1'}}
+.m-row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.m-brand{font-size:1.2rem;color:var(--c)}.m-links{display:flex;gap:20px;flex-wrap:wrap}
+.m-hero{position:relative;min-height:440px;display:flex;align-items:center;color:#fff;overflow:hidden}
+.m-hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(.55)}
+.m-hero-in{position:relative;padding-top:80px;padding-bottom:80px;width:100%}.m-hero p{color:rgba(255,255,255,.88);font-size:1.15rem;max-width:620px}
+.m-btn{display:inline-block;background:var(--c);color:#fff;text-decoration:none;padding:12px 24px;border-radius:999px;font-weight:600;margin-top:8px}
+.m-split{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+.m-rounded{width:100%;border-radius:12px;display:block;aspect-ratio:4/3;object-fit:cover}
+.m-grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:24px}
+.m-card{background:${card};padding:24px;border-radius:12px;border-top:4px solid var(--c);box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.m-site blockquote{margin:0}.m-quote{font-size:1.4rem;color:${ink};font-style:italic}.m-site cite{color:${muted}}
+.m-cta{background:var(--c);color:#fff}.m-cta .m-btn{background:#fff;color:var(--c)}
+.m-contact{list-style:none;padding:0;margin:0;display:grid;gap:12px}.m-contact b{display:block;font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--c)}
+.m-foot{padding:28px 0;background:${alt};color:${muted}}
+@media (max-width:720px){.m-split,.m-grid3{grid-template-columns:1fr}.m-sec{padding:44px 0}.m-hero{min-height:360px}}
+`;
+  };
+
+  /* ---------- Stato ---------- */
+  const uid = () => Math.random().toString(36).slice(2, 9);
+  const mk = type => ({ id: uid(), type, p: TYPES[type].make() });
+  const starter = () => ({
+    settings: { title: 'Il mio sito', color: '#2f6fed', font: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif', theme: 'light' },
+    blocks: ['nav', 'hero', 'text', 'features', 'imgtext', 'contact', 'footer'].map(mk),
+  });
+
+  let state;
+  try { state = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch { state = null; }
+  if (!state || !Array.isArray(state.blocks)) state = starter();
+  let selected = null;
+
+  let saveTimer;
+  const save = () => {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch { /* spazio pieno o storage bloccato */ } }, 300);
+  };
+  const flush = () => { clearTimeout(saveTimer); try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch { } };
+  addEventListener('pagehide', flush);
+  addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
+  const find = id => state.blocks.find(b => b.id === id);
+
+  /* ---------- Render editor ---------- */
+  const canvas = document.getElementById('canvas');
+  const siteStyle = document.getElementById('site-css');
+
+  function render() {
+    siteStyle.textContent = siteCSS(state.settings);
+    if (!state.blocks.length) {
+      canvas.className = '';
+      canvas.innerHTML = '<div class="empty">La pagina è vuota.<br>Aggiungi una sezione dal pannello a sinistra.</div>';
+      return;
+    }
+    canvas.className = 'm-site';
+    canvas.innerHTML = state.blocks.map((b, i) => `
+      <div class="eb${b.id === selected ? ' sel' : ''}" data-block="${b.id}">
+        <span class="tag">${TYPES[b.type].name}</span>
+        <div class="tools">
+          <button data-act="up" ${i === 0 ? 'disabled' : ''} title="Sposta su">↑</button>
+          <button data-act="down" ${i === state.blocks.length - 1 ? 'disabled' : ''} title="Sposta giù">↓</button>
+          <button data-act="dup" title="Duplica">⧉</button>
+          <button data-act="del" title="Elimina" style="color:var(--danger)">✕</button>
+        </div>
+        ${RENDER[b.type](b, true)}
+      </div>`).join('');
+    if (document.body.classList.contains('preview-mode'))
+      canvas.querySelectorAll('[contenteditable]').forEach(el => el.contentEditable = false);
+  }
+
+  /* ---------- Palette ---------- */
+  const palette = document.getElementById('palette');
+  palette.innerHTML = Object.entries(TYPES).map(([k, t]) => `<button data-add="${k}">+ ${t.name}</button>`).join('');
+  palette.addEventListener('click', e => {
+    const k = e.target.closest('[data-add]')?.dataset.add; if (!k) return;
+    const b = mk(k);
+    const idx = selected ? state.blocks.findIndex(x => x.id === selected) : -1;
+    if (idx >= 0) state.blocks.splice(idx + 1, 0, b); else state.blocks.push(b);
+    selected = b.id; save(); render();
+    canvas.querySelector(`[data-block="${b.id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+
+  /* ---------- Interazioni sul canvas ---------- */
+  canvas.addEventListener('click', e => {
+    const act = e.target.closest('[data-act]');
+    const wrap = e.target.closest('[data-block]');
+    if (act && wrap) {
+      const i = state.blocks.findIndex(b => b.id === wrap.dataset.block);
+      const a = act.dataset.act;
+      if (a === 'up' && i > 0) [state.blocks[i - 1], state.blocks[i]] = [state.blocks[i], state.blocks[i - 1]];
+      if (a === 'down' && i < state.blocks.length - 1) [state.blocks[i + 1], state.blocks[i]] = [state.blocks[i], state.blocks[i + 1]];
+      if (a === 'dup') { const c = { ...structuredClone(state.blocks[i]), id: uid() }; state.blocks.splice(i + 1, 0, c); selected = c.id; }
+      if (a === 'del' && confirm('Eliminare questa sezione?')) { state.blocks.splice(i, 1); selected = null; }
+      save(); render(); return;
+    }
+    if (e.target.closest('a')) e.preventDefault(); // non seguire i link in modifica
+    const img = e.target.closest('[data-img]');
+    if (img && !document.body.classList.contains('preview-mode')) { openImg(img); return; }
+    if (wrap && wrap.dataset.block !== selected) {
+      selected = wrap.dataset.block;
+      canvas.querySelectorAll('.eb').forEach(el => el.classList.toggle('sel', el.dataset.block === selected));
+    }
+  });
+
+  canvas.addEventListener('input', e => {
+    const el = e.target.closest('[data-key]'); if (!el) return;
+    const b = find(el.dataset.id); if (!b) return;
+    b.p[el.dataset.key] = el.innerText.replace(/\n$/, '');
+    save();
+  });
+  // Incolla solo testo semplice
+  canvas.addEventListener('paste', e => {
+    if (!e.target.closest('[contenteditable]')) return;
+    e.preventDefault();
+    document.execCommand('insertText', false, (e.clipboardData || window.clipboardData).getData('text/plain'));
+  });
+  // Invio nei titoli/pulsanti/voci brevi: niente a capo
+  canvas.addEventListener('keydown', e => {
+    const el = e.target.closest('[data-key]');
+    if (el && e.key === 'Enter' && !/^(P)$/.test(el.tagName)) { e.preventDefault(); el.blur(); }
+  });
+  canvas.addEventListener('dblclick', e => {
+    const a = e.target.closest('[data-link]'); if (!a) return;
+    openLink(a);
+  });
+
+  /* ---------- Dialog immagine ---------- */
+  const imgDialog = document.getElementById('imgDialog');
+  const imgUrl = document.getElementById('imgUrl'), imgFile = document.getElementById('imgFile'), imgAlt = document.getElementById('imgAlt');
+  let imgTarget = null, imgData = null;
+  function openImg(el) {
+    const b = find(el.dataset.id);
+    imgTarget = { b, key: el.dataset.img, alt: el.dataset.alt };
+    const cur = b.p[imgTarget.key];
+    imgUrl.value = cur.startsWith('data:') ? '' : cur;
+    imgAlt.value = b.p[imgTarget.alt] || '';
+    imgFile.value = ''; imgData = null;
+    imgDialog.showModal();
+  }
+  imgFile.addEventListener('change', () => {
+    const f = imgFile.files[0]; if (!f) return;
+    if (f.size > 4 * 1024 * 1024) { alert('Immagine troppo grande (max 4 MB). Prova a ridurla o usa un URL.'); imgFile.value = ''; return; }
+    const r = new FileReader(); r.onload = () => { imgData = r.result; imgUrl.value = ''; }; r.readAsDataURL(f);
+  });
+  document.getElementById('imgCancel').onclick = () => imgDialog.close();
+  document.getElementById('imgOk').onclick = () => {
+    const src = imgData || imgUrl.value.trim();
+    if (src) imgTarget.b.p[imgTarget.key] = src;
+    imgTarget.b.p[imgTarget.alt] = imgAlt.value.trim();
+    imgDialog.close(); save(); render();
+  };
+
+  /* ---------- Dialog link ---------- */
+  const linkDialog = document.getElementById('linkDialog'), linkUrl = document.getElementById('linkUrl');
+  let linkTarget = null;
+  function openLink(el) {
+    linkTarget = { b: find(el.dataset.id), key: el.dataset.link };
+    linkUrl.value = linkTarget.b.p[linkTarget.key] || '';
+    linkDialog.showModal();
+  }
+  document.getElementById('linkCancel').onclick = () => linkDialog.close();
+  document.getElementById('linkOk').onclick = () => { linkTarget.b.p[linkTarget.key] = linkUrl.value.trim(); linkDialog.close(); save(); render(); };
+
+  /* ---------- Impostazioni ---------- */
+  const setTitle = document.getElementById('setTitle'), setColor = document.getElementById('setColor'),
+        setFont = document.getElementById('setFont'), setTheme = document.getElementById('setTheme');
+  function syncSettings() {
+    setTitle.value = state.settings.title; setColor.value = state.settings.color;
+    setFont.value = state.settings.font; setTheme.value = state.settings.theme;
+  }
+  setTitle.oninput = () => { state.settings.title = setTitle.value; save(); };
+  setColor.oninput = () => { state.settings.color = setColor.value; save(); siteStyle.textContent = siteCSS(state.settings); };
+  setFont.onchange = () => { state.settings.font = setFont.value; save(); render(); };
+  setTheme.onchange = () => { state.settings.theme = setTheme.value; save(); render(); };
+
+  /* ---------- Barra superiore ---------- */
+  const download = (name, content, type) => {
+    const url = URL.createObjectURL(new Blob([content], { type }));
+    const a = Object.assign(document.createElement('a'), { href: url, download: name });
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  const slug = s => (s || 'pagina').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'pagina';
+
+  function exportHTML() {
+    const s = state.settings;
+    return `<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(s.title)}</title>
+<style>html,body{margin:0}${siteCSS(s)}</style>
+</head>
+<body class="m-site">
+${state.blocks.map(b => RENDER[b.type](b, false)).join('\n')}
+</body>
+</html>`;
+  }
+
+  document.getElementById('btnExport').onclick = () => download(slug(state.settings.title) + '.html', exportHTML(), 'text/html');
+  document.getElementById('btnSave').onclick = () => download(slug(state.settings.title) + '.mudi.json', JSON.stringify(state, null, 2), 'application/json');
+  const importFile = document.getElementById('importFile');
+  document.getElementById('btnImport').onclick = () => importFile.click();
+  importFile.onchange = () => {
+    const f = importFile.files[0]; if (!f) return;
+    f.text().then(t => {
+      const d = JSON.parse(t);
+      if (!d || !Array.isArray(d.blocks) || !d.settings) throw new Error();
+      d.blocks = d.blocks.filter(b => TYPES[b.type]);
+      state = d; selected = null; save(); syncSettings(); render();
+    }).catch(() => alert('File di progetto non valido.')).finally(() => { importFile.value = ''; });
+  };
+  document.getElementById('btnNew').onclick = () => {
+    if (!confirm('Ricominciare da una pagina di esempio? Le modifiche non salvate andranno perse.')) return;
+    state = starter(); selected = null; save(); syncSettings(); render();
+  };
+  const btnPreview = document.getElementById('btnPreview');
+  btnPreview.onclick = () => {
+    const on = document.body.classList.toggle('preview-mode');
+    canvas.querySelectorAll('[contenteditable]').forEach(el => el.contentEditable = !on);
+    btnPreview.textContent = on ? '✎ Modifica' : '👁 Anteprima';
+  };
+  const btnView = document.getElementById('btnView'), device = document.getElementById('device');
+  btnView.onclick = () => {
+    const m = device.classList.toggle('mobile');
+    btnView.textContent = m ? '🖥 Desktop' : '📱 Mobile';
+  };
+
+  // Le media query non reagiscono alla larghezza del riquadro: in vista mobile forziamo il layout a una colonna.
+  const mobileFix = document.createElement('style');
+  mobileFix.textContent = '.device.mobile .m-split,.device.mobile .m-grid3{grid-template-columns:1fr}.device.mobile .m-sec{padding:44px 0}';
+  document.head.appendChild(mobileFix);
+
+  syncSettings(); render();
+})();
+</script>
+</body>
+</html>
